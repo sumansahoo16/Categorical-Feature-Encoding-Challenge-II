@@ -6,6 +6,12 @@ Public Score : 0.78554
 
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import StratifiedKFold, train_test_split
+import category_encoders as ce
+from keras.models import Sequential
+from keras.layers import Dense, BatchNormalization
+from keras.optimizers import RMSprop
+from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint
 
 data = pd.read_csv('train.csv')
 test = pd.read_csv('test.csv')
@@ -20,6 +26,7 @@ bin_var = ['bin_0','bin_1','bin_2','bin_3','bin_4']
 nom_cols = ['nom_{}'.format(i) for i in range(10)]
 ord_cols = ['ord_{}'.format(i) for i in range(6)]
 encoding_cols = bin_var + nom_cols + ord_cols + ['day' , 'month']
+
 ################### TARGET-ENCODING ############################
 encoded = pd.DataFrame([])
 for tr_in,fold_in in StratifiedKFold(n_splits=12, shuffle=True).split(train, target):
@@ -31,6 +38,7 @@ for tr_in,fold_in in StratifiedKFold(n_splits=12, shuffle=True).split(train, tar
     test_ = encoder.transform(test)
     train_ = encoded.sort_index()
 #################################################################
+
 X_train, X_test, y_train, y_test = train_test_split(train_, target, test_size=0.005, random_state=16)
 
 
@@ -48,6 +56,7 @@ optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.0)
 model.compile(optimizer = optimizer , loss = "binary_crossentropy", metrics=["accuracy"])
 
 learning_rate_reduction = ReduceLROnPlateau(monitor='val_accuracy', patience=3, verbose=1, factor=0.5,  min_lr=0.00001)
+
 checkpoint = ModelCheckpoint("best_weights.hdf5", monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
 
 epochs = 25
